@@ -1,75 +1,39 @@
 {% extends 'index.html' %}
 {% block content %}
 <div class="container mt-4">
-    <h2 class="text-center mb-4">Rejected Doctors</h2>
-
-    {% if rejected_list %}
-    <table class="table table-bordered table-striped">
-        <thead class="table-dark">
+    <h2 class="mb-3 text-center">Rejected Doctors</h2>
+    <h4>Hospital Doctors</h4>
+    <table class="table table-bordered">
+        <thead class="table-light">
             <tr>
-                <th>Doctor ID</th>
                 <th>Name</th>
                 <th>Email</th>
-                <th>Phone</th>
-                <th>Profile Image</th>
-                <th>Id Card</th>
-                <th>Qualification</th>
+                <th>Specialization</th>
                 <th>Experience</th>
-                <th>Hospital Name</th>
                 <th>Hospital Address</th>
-                <th>Hospital Phone</th>
-                <th>Hospital Place</th>
-                <th>Approve</th>
+                <th>Profile</th>
+                <th>ID Card</th>
+                <th>Action</th>
             </tr>
         </thead>
         <tbody>
-            {% for doctor in rejected_list %}
+            {% for doctor in hospital_rejected %}
             <tr>
-                <td>{{ doctor.doctor_id }}</td>
                 <td>{{ doctor.name }}</td>
                 <td>{{ doctor.email }}</td>
-                <td>{{ doctor.phno }}</td>
-                <td>
-                    {% if doctor.doctor_image %}
-                    <a href="{{ doctor.doctor_image.url }}" target="_blank">
-                        <img src="{{ doctor.doctor_image.url }}" alt="Doctor Image" width="50" height="50"
-                            style="border-radius:5px; cursor:pointer;">
-                    </a>
-                    {% else %}
-                    N/A
-                    {% endif %}
-                </td>
-                <td>
-                    {% if doctor.id_proof %}
-                    <a href="{{ doctor.id_proof.url }}" target="_blank">
-                        <img src="{{ doctor.id_proof.url }}" alt="ID Proof" width="50" height="50"
-                            style="border-radius:5px; cursor:pointer;">
-                    </a>
-                    {% else %}
-                    N/A
-                    {% endif %}
-                </td>
-
-                <td>{{ doctor.qualification }}</td>
-                <td>{{ doctor.experience }}</td>
-                <td>{{ doctor.hospital_name }}</td>
+                <td>{{ doctor.specialization }}</td>
+                <td>{{ doctor.experience }} years</td>
                 <td>{{ doctor.hospital_address }}</td>
-                <td>{{ doctor.hospital_phno }}</td>
-                <td>{{ doctor.hospital_place }}</td>
+                <td><img src="{{ doctor.image.url }}" width="70" height="70" class="rounded"></td>
+                <td><img src="{{ doctor.medical_id.url }}" width="70" height="70" class="rounded"></td>
                 <td>
-
-                    <form action="{% url 'update_doctor_status' doctor.id 'approve' %}" method="post"
-                        style="display:inline;">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-success btn-sm">Approve</button>
-                    </form>
+                    <a href="{% url 'approve_hospital_doctor' doctor.id %}" class="btn btn-success btn-sm">Approve</a>
                 </td>
             </tr>
+            {% empty %}
+            <tr><td colspan="8" class="text-center">No rejected hospital doctors</td></tr>
             {% endfor %}
         </tbody>
     </table>
-    {% else %}
-    <p class="text-center text-muted">No rejected doctors found.</p>
-    {% endif %}
 </div>
 {% endblock %}

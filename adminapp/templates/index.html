@@ -124,9 +124,9 @@
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Doctors</a>
           <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="#">Pending Doctors</a></li>
-            <li><a class="dropdown-item" href="#">Approved Doctors</a></li>
-            <li><a class="dropdown-item" href="#">Rejected Doctors</a></li>
+            <li><a class="dropdown-item" href="{% url 'view_pending_doctors' %}">Pending Doctors</a></li>
+            <li><a class="dropdown-item" href="{% url 'view_approved_doctors' %}">Approved Doctors</a></li>
+            <li><a class="dropdown-item" href="{% url 'view_rejected_doctors' %}">Rejected Doctors</a></li>
           </ul>
         </li>
 

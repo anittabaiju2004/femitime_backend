@@ -1,7 +1,5 @@
 from django.shortcuts import render
-
-# Create your views here.
-# Create your views here.
+from rest_framework.decorators import api_view
 from django.shortcuts import render
 from rest_framework import viewsets
 from rest_framework.views import APIView
@@ -14,83 +12,70 @@ class RegisterViewSet(viewsets.ModelViewSet):
     queryset = Register.objects.all()
     serializer_class = RegisterSerializer
 
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from .models import tbl_doctor, Register
-from .serializers import DoctorLoginSerializer, UserLoginSerializer
-
-
 class LoginView(APIView):
+    """
+    Login endpoint for:
+    - Hospital Doctor
+    - Normal User 
+    """
+
     def post(self, request):
-        role = request.data.get('role')
-
-        # Doctor Login
-        if role == 'doctor':
-            serializer = DoctorLoginSerializer(data=request.data)
-            if serializer.is_valid():
-                doctor_id = serializer.validated_data['doctor_id']
-                email = serializer.validated_data['email']
-
-                try:
-                    doctor = tbl_doctor.objects.get(doctor_id=doctor_id, email=email)
-                    if doctor.status != 'approved':
-                        return Response(
-                            {'message': 'Doctor account not approved yet.'},
-                            status=status.HTTP_403_FORBIDDEN
-                        )
-
-                    return Response({
-                        'id': doctor.id,
-                        'name': doctor.name,
-                        'email': doctor.email,
-                        'doctor_id': doctor.doctor_id,
-                        'role': doctor.role,
-                        'status': doctor.status
-                    }, status=status.HTTP_200_OK)
-
-                except tbl_doctor.DoesNotExist:
-                    return Response({'message': 'Invalid Doctor ID or Email.'},
-                                    status=status.HTTP_401_UNAUTHORIZED)
+        serializer = LoginSerializer(data=request.data)
+        if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        # User Login
-        elif role == 'user':
-            serializer = UserLoginSerializer(data=request.data)
-            if serializer.is_valid():
-                email = serializer.validated_data['email']
-                password = serializer.validated_data['password']
+        email = serializer.validated_data['email']
+        password = serializer.validated_data['password']
 
-                try:
-                    user = Register.objects.get(email=email, password=password)
-                    return Response({
-                        'id': user.id,
-                        'name': user.name,
-                        'email': user.email,
-                        'phone': user.phone,
-                        'role': user.role
-                    }, status=status.HTTP_200_OK)
+        
 
-                except Register.DoesNotExist:
-                    return Response({'message': 'Invalid Email or Password.'},
-                                    status=status.HTTP_401_UNAUTHORIZED)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # --- Hospital Doctor Login ---
+        hospital_doc = tbl_hospital_doctor_register.objects.filter(email=email, password=password).first()
+        if hospital_doc:
+            if hospital_doc.status != 'approved':
+                return Response(
+                    {'message': 'Hospital doctor account not approved yet. Please wait for admin approval.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
 
-        else:
-            return Response({'message': 'Please specify a valid role (doctor/user).'},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                'id': hospital_doc.id,
+                'name': hospital_doc.name,
+                'email': hospital_doc.email,
+                'phone': hospital_doc.hospital_phone,
+                'role': hospital_doc.role,
+                'password': hospital_doc.password,
+            }, status=status.HTTP_200_OK)
+
+        # --- Normal User Login ---
+        user = Register.objects.filter(email=email, password=password).first()
+        if user:
+            return Response({
+                'id': user.id,
+                'name': user.name,
+                'email': user.email,
+                'password': user.password,
+                'phone':user.phone,
+                'role': user.role
+            }, status=status.HTTP_200_OK)
+
+        # --- Invalid Credentials ---
+        return Response({'message': 'Invalid email or password'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
-class DoctorRegisterViewSet(viewsets.ModelViewSet):
-    queryset = tbl_doctor.objects.all()
-    serializer_class = RegisterSerializer
+#  Hospital Doctor ViewSet
+class HospitalDoctorRegisterViewSet(viewsets.ModelViewSet):
+    queryset = tbl_hospital_doctor_register.objects.all()
+    serializer_class = HospitalDoctorRegisterSerializer
 
-
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
+
 import google.generativeai as genai
 import os
 from dotenv import load_dotenv
@@ -242,6 +227,240 @@ class PCODPredictionAPI(APIView):
                 "result": result_label,
                 "values": pdf_values
             })
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=400)
+
+
+
+
+
+
+
+
+
+
+
+
+#Doctor
+
+
+@api_view(['GET'])
+def view_hospital_doctor_profile(request, doctor_id):
+    try:
+        doctor = tbl_hospital_doctor_register.objects.get(id=doctor_id)
+    except tbl_hospital_doctor_register.DoesNotExist:
+        return Response({'error': 'Doctor not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = HospitalDoctorRegisterSerializer(doctor)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
+
+class HospitalDoctorProfileViewSet(viewsets.ViewSet):
+    """
+    A ViewSet for updating hospital doctor profiles (partial or full updates).
+    """
+
+    def partial_update(self, request, pk=None):
+        try:
+            doctor = tbl_hospital_doctor_register.objects.get(pk=pk)
+        except tbl_hospital_doctor_register.DoesNotExist:
+            return Response({'error': 'Doctor not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = HospitalDoctorProfileUpdateSerializer(doctor, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message': 'Profile updated successfully', 'data': serializer.data}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+from rest_framework import viewsets
+from .models import HospitalDoctorTimeSlotGroup
+from .serializers import HospitalDoctorTimeSlotGroupSerializer
+
+class HospitalDoctorTimeSlotGroupViewSet(viewsets.ModelViewSet):
+    queryset = HospitalDoctorTimeSlotGroup.objects.all().order_by('-date')
+    serializer_class = HospitalDoctorTimeSlotGroupSerializer
+
+
+
+
+
+
+
+# ✅ View all available hospital doctor time slots
+@api_view(['GET'])
+def view_hospital_doctor_timeslots(request, doctor_id):
+    """
+    Get all time slot groups for a hospital doctor with booking info.
+    """
+    try:
+        groups = HospitalDoctorTimeSlotGroup.objects.filter(doctor_id=doctor_id).order_by('date')
+
+        if not groups.exists():
+            return Response({"message": "No time slots found for this doctor."}, status=status.HTTP_404_NOT_FOUND)
+
+        result = []
+        for group in groups:
+            # ✅ Already booked times for that date
+            booked_times = list(
+                HospitalBooking.objects.filter(
+                    doctor_id=doctor_id,
+                    date=group.date
+                ).values_list('time', flat=True)
+            )
+
+            # Normalize booked times (e.g. "10:00:00" → "10:00")
+            booked_times = [t[:5] for t in booked_times]
+
+            result.append({
+                "id": group.id,
+                "doctor": group.doctor.id,
+                "doctor_name": group.doctor.name,
+                "date": group.date,
+                "start_time": group.start_time.strftime("%H:%M:%S"),
+                "end_time": group.end_time.strftime("%H:%M:%S"),
+                "timeslots": [
+                    {"time": t, "is_booked": t in booked_times}
+                    for t in group.timeslots
+                ],
+            })
+
+        return Response(result, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+
+
+
+
+@api_view(['POST'])
+def update_hospital_doctor_availability(request, doctor_id):
+    try:
+        doctor = tbl_hospital_doctor_register.objects.get(id=doctor_id)
+    except tbl_hospital_doctor_register.DoesNotExist:
+        return Response({"error": "Doctor not found"}, status=status.HTTP_404_NOT_FOUND)
+    
+    available = request.data.get('available')
+
+    if available is None:
+        return Response({"error": "Availability value required (true/false)"}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Convert to boolean
+    if isinstance(available, str):
+        available = available.lower() in ['true', '1', 'yes']
+
+    doctor.available = available
+    doctor.save()
+
+    return Response({
+        "message": "Availability updated successfully",
+        "doctor_id": doctor.id,
+        "available": doctor.available
+    }, status=status.HTTP_200_OK)
+
+
+
+
+@api_view(['GET'])
+def view_nearby_hospital_doctors(request, user_id):
+    """
+    Get all approved and available hospital doctors 
+    who are in the same place as the user.
+    """
+    try:
+        user = Register.objects.get(id=user_id)
+    except Register.DoesNotExist:
+        return Response({"error": "User not found"}, status=404)
+
+    if not user.place:
+        return Response({"error": "User place not available"}, status=400)
+
+    # ✅ Only approved & available doctors in the same place
+    doctors = tbl_hospital_doctor_register.objects.filter(
+        status='approved', available=True, place__iexact=user.place
+    )
+
+    if not doctors.exists():
+        return Response({"message": "No nearby hospital doctors found in your area."}, status=200)
+
+    nearby_doctors = []
+    for doctor in doctors:
+        nearby_doctors.append({
+            "id": doctor.id,
+            "name": doctor.name,
+            "qualification": doctor.qualification,
+            "specialization": doctor.specialization,
+            "experience": doctor.experience,
+            "phone": doctor.hospital_phone,
+            "hospital_name": doctor.hospital_name,
+            "hospital_address": doctor.hospital_address,
+            "place": doctor.place,
+            "available": doctor.available,
+            "image": doctor.image.url if doctor.image else None,
+            "status": doctor.status,
+        })
+
+    return Response({"nearby_hospital_doctors": nearby_doctors})
+
+
+
+
+
+# 🧠 User Adds Feedback
+@api_view(['POST'])
+def add_hospital_doctor_feedback(request):
+    user_id = request.data.get('user')
+    doctor_id = request.data.get('doctor')
+    rating = request.data.get('rating')
+    comments = request.data.get('comments', '')
+
+    try:
+        user = Register.objects.get(id=user_id)
+        doctor = tbl_hospital_doctor_register.objects.get(id=doctor_id)
+    except (Register.DoesNotExist, tbl_hospital_doctor_register.DoesNotExist):
+        return Response({'error': 'Invalid user or doctor ID'}, status=status.HTTP_404_NOT_FOUND)
+
+    feedback = HospitalDoctorFeedback.objects.create(
+        user=user, doctor=doctor, rating=rating, comments=comments
+    )
+    serializer = HospitalDoctorFeedbackSerializer(feedback)
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+# 🧠 Doctor Views Feedback
+@api_view(['GET'])
+def view_hospital_doctor_feedback(request, doctor_id):
+    feedbacks = HospitalDoctorFeedback.objects.filter(doctor_id=doctor_id).order_by('-created_at')
+    serializer = HospitalDoctorFeedbackSerializer(feedbacks, many=True)
+    return Response(serializer.data)
+
+
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from .models import HospitalDoctorFeedback
+from .serializers import HospitalDoctorFeedbackSerializer
+
+
+class GetDoctorFeedbackAPI(APIView):
+    def get(self, request, doctor_id):
+        try:
+            feedbacks = HospitalDoctorFeedback.objects.filter(doctor_id=doctor_id)
+
+            if not feedbacks.exists():
+                return Response({"message": "No feedback found for this doctor."}, status=404)
+
+            serializer = HospitalDoctorFeedbackSerializer(feedbacks, many=True)
+            return Response(serializer.data, status=200)
 
         except Exception as e:
             return Response({"error": str(e)}, status=400)

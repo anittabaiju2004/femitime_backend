@@ -12,7 +12,12 @@ from femitimeapp.views import *
 # router setup
 router = routers.DefaultRouter()
 router.register(r'register', RegisterViewSet, basename='register')
-router.register(r'doctor_register', DoctorRegisterViewSet,basename='doctor_register')
+router.register(r'doctor_register', HospitalDoctorRegisterViewSet,basename='doctor_register')
+router.register(r'hospital_doctor_timeslots', HospitalDoctorTimeSlotGroupViewSet, basename='hospital_doctor_timeslot')
+
+hospital_doctor_profile_update = HospitalDoctorProfileViewSet.as_view({
+    'patch': 'partial_update'
+})
 
 
 # Swagger setup
@@ -40,6 +45,14 @@ urlpatterns = [
     path('login/', LoginView.as_view(), name='login'),
     path("chatbot/", ChatbotAPIView.as_view(), name="chatbot_api"),
     path("predict/", PCODPredictionAPI.as_view(), name="pcod_predict"),
-    
+
+    path('view_hospital_doctor/<int:doctor_id>/', views.view_hospital_doctor_profile, name='view_hospital_doctor_profile'),
+    path('hospital_doctor/update/<int:pk>/', hospital_doctor_profile_update, name='hospital_doctor_profile_update'),
+    path('hospital-doctor/<int:doctor_id>/availability/', views.update_hospital_doctor_availability, name='update_hospital_doctor_availability'),
+    path('hospital/doctor/<int:doctor_id>/timeslots/', view_hospital_doctor_timeslots, name='view_hospital_doctor_timeslots'),
+    path('view_nearby_hospital_doctors/<int:user_id>/', views.view_nearby_hospital_doctors, name='view_nearby_hospital_doctors'),
+    path('user-hospital/doctor/feedback/add/', views.add_hospital_doctor_feedback, name='add_hospital_doctor_feedback'),
+    path('hospital/doctor/<int:doctor_id>/feedback/', views.view_hospital_doctor_feedback, name='view_hospital_doctor_feedback'),
+    path('doctor/<int:doctor_id>/feedback/', GetDoctorFeedbackAPI.as_view(), name='doctor_feedback'),
 
 ]
