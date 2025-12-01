@@ -82,3 +82,65 @@ def view_rejected_doctors(request):
     return render(request, 'rejected_doctors.html', {
         'hospital_rejected': hospital_rejected
     })
+
+
+
+
+
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Book
+
+# 📘 Add Book
+def add_book(request):
+    if request.method == "POST":
+        title = request.POST.get("title")
+        author = request.POST.get("author")
+        description = request.POST.get("description")
+        category = request.POST.get("category")
+        publisher = request.POST.get("publisher")
+        publication_date = request.POST.get("publication_date")
+        cover_image = request.FILES.get("cover_image")
+
+        Book.objects.create(
+            title=title,
+            author=author,
+            description=description,
+            category=category,
+            publisher=publisher,
+            publication_date=publication_date if publication_date else None,
+            cover_image=cover_image
+        )
+        return redirect("view_books")
+    return render(request, "add_book.html")
+
+
+# 📚 List Books
+def view_books(request):
+    books = Book.objects.all().order_by("created_at")
+    return render(request, "view_books.html", {"books": books})
+
+
+# ✏️ Edit Book
+def edit_book(request, pk):
+    book = get_object_or_404(Book, pk=pk)
+    if request.method == "POST":
+        book.title = request.POST.get("title")
+        book.author = request.POST.get("author")
+        book.description = request.POST.get("description")
+        book.category = request.POST.get("category")
+        book.publisher = request.POST.get("publisher")
+        book.publication_date = request.POST.get("publication_date")
+        if request.FILES.get("cover_image"):
+            book.cover_image = request.FILES.get("cover_image")
+        book.save()
+        return redirect("view_books")
+    return render(request, "edit_book.html", {"book": book})
+
+
+# 🗑️ Delete Book
+def delete_book(request, pk):
+    book = get_object_or_404(Book, pk=pk)
+    book.delete()
+    return redirect("view_books")
+
+

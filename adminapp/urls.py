@@ -15,4 +15,9 @@ urlpatterns = [
     path('view_approved_doctors/', views.view_approved_doctors, name='view_approved_doctors'),
 
     path('view_rejected_doctors/', views.view_rejected_doctors, name='view_rejected_doctors'),
+
+    path("add-book/", views.add_book, name="add_book"),
+    path("books/", views.view_books, name="view_books"),
+    path("edit-book/<int:pk>/", views.edit_book, name="edit_book"),
+    path("delete-book/<int:pk>/", views.delete_book, name="delete_book"),
 ]

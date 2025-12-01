@@ -59,11 +59,11 @@ class HospitalDoctorRegisterSerializer(serializers.ModelSerializer):
 
 
 from rest_framework import serializers
-from .models import PredictionResult
+from .models import TblPredictionResult
 
 class PredictionSerializer(serializers.ModelSerializer):
     class Meta:
-        model = PredictionResult
+        model = TblPredictionResult
         fields = "__all__"
         read_only_fields = ("result", "extracted_data", "created_at")
 
@@ -108,3 +108,19 @@ class HospitalDoctorFeedbackSerializer(serializers.ModelSerializer):
         model = HospitalDoctorFeedback
         fields = ['id', 'user', 'user_name', 'doctor', 'doctor_name', 'rating', 'comments', 'created_at']
         
+
+
+from .models import CycleInput
+
+class CycleInputSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CycleInput
+        fields = '__all__' 
+
+
+
+from adminapp.models import Book
+class BookSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=Book
+        fields="__all__"

@@ -58,18 +58,48 @@ class tbl_hospital_doctor_register(models.Model):
 #pcod prediction model
 from django.db import models
 from .models import Register   # your user model
-
 class PredictionResult(models.Model):
     user = models.ForeignKey(Register, on_delete=models.CASCADE)
+
+    age = models.IntegerField(default=0)
+    weight = models.FloatField(default=0)
+    height = models.FloatField(default=0)
+    bmi = models.FloatField(default=0)
+    fast_food_consumption = models.CharField(max_length=50, default="0")
+    blood_group = models.CharField(max_length=10, default="Unknown")
+    pulse_rate = models.FloatField(default=0)
+    cycle_regularity = models.CharField(max_length=50, default="0")
+    hair_growth = models.CharField(max_length=50, default="0")
+    acne = models.CharField(max_length=50, default="0")
+    mood_swings = models.CharField(max_length=50, default="0")
+    skin_darkening = models.CharField(max_length=50, default="0")
+
     pdf_file = models.FileField(upload_to="medical_reports/")
-    result = models.CharField(max_length=50)
+    result = models.CharField(max_length=50, default="Pending")
     extracted_data = models.JSONField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return f"{self.user.name} - {self.result}"
 
+class TblPredictionResult(models.Model):
+    user = models.ForeignKey(Register, on_delete=models.CASCADE)
 
+    age = models.IntegerField(default=0)
+    weight = models.FloatField(default=0)
+    height = models.FloatField(default=0)
+    bmi = models.FloatField(default=0)
+    fast_food_consumption = models.CharField(max_length=50, default="0")
+    blood_group = models.CharField(max_length=10, default="Unknown")
+    pulse_rate = models.FloatField(default=0)
+    cycle_regularity = models.CharField(max_length=50, default="0")
+    hair_growth = models.CharField(max_length=50, default="0")
+    acne = models.CharField(max_length=50, default="0")
+    mood_swings = models.CharField(max_length=50, default="0")
+    skin_darkening = models.CharField(max_length=50, default="0")
+
+    pdf_file = models.FileField(upload_to="medical_reports/")
+    result = models.CharField(max_length=50, default="Pending")
+    extracted_data = models.JSONField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
 
 
@@ -116,3 +146,20 @@ class HospitalDoctorFeedback(models.Model):
 
     def __str__(self):
         return f"Feedback by {self.user.name} for {self.doctor.name}"
+
+
+
+class CycleInput(models.Model):
+
+    user = models.ForeignKey(Register, on_delete=models.CASCADE, related_name="cycle_inputs")
+    last_day_of_period = models.DateField()
+    duration = models.IntegerField(help_text="Duration of period in days")
+    flow_intensity = models.TextField(blank=True, null=True)
+    symptoms = models.TextField(blank=True, null=True, help_text="List symptoms like cramps, headache, etc.")
+    description = models.TextField(blank=True, null=True)
+    average_cycle_length = models.IntegerField(help_text="Average cycle length in days", blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Cycle input for {self.user.name} on {self.last_day_of_period}"
+

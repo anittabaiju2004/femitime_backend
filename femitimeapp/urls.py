@@ -8,13 +8,13 @@ from drf_yasg import openapi
 from .import views
 # import your viewsets
 from femitimeapp.views import *
-
+# from femitimeapp.views import get_cycle_inputs_by_user
 # router setup
 router = routers.DefaultRouter()
 router.register(r'register', RegisterViewSet, basename='register')
 router.register(r'doctor_register', HospitalDoctorRegisterViewSet,basename='doctor_register')
 router.register(r'hospital_doctor_timeslots', HospitalDoctorTimeSlotGroupViewSet, basename='hospital_doctor_timeslot')
-
+router.register(r'cycle-inputs', CycleInputViewSet, basename='cycle-input')
 hospital_doctor_profile_update = HospitalDoctorProfileViewSet.as_view({
     'patch': 'partial_update'
 })
@@ -43,9 +43,9 @@ urlpatterns = [
 
 
     path('login/', LoginView.as_view(), name='login'),
-    path("chatbot/", ChatbotAPIView.as_view(), name="chatbot_api"),
+    path("chatbot/", PCODChatbotAPIView.as_view(), name="chatbot_api"),
     path("predict/", PCODPredictionAPI.as_view(), name="pcod_predict"),
-
+    # path("cycle-inputs/user/<int:user_id>/", get_cycle_inputs_by_user, name="cycle_inputs_by_user"),
     path('view_hospital_doctor/<int:doctor_id>/', views.view_hospital_doctor_profile, name='view_hospital_doctor_profile'),
     path('hospital_doctor/update/<int:pk>/', hospital_doctor_profile_update, name='hospital_doctor_profile_update'),
     path('hospital-doctor/<int:doctor_id>/availability/', views.update_hospital_doctor_availability, name='update_hospital_doctor_availability'),
@@ -54,5 +54,5 @@ urlpatterns = [
     path('user-hospital/doctor/feedback/add/', views.add_hospital_doctor_feedback, name='add_hospital_doctor_feedback'),
     path('hospital/doctor/<int:doctor_id>/feedback/', views.view_hospital_doctor_feedback, name='view_hospital_doctor_feedback'),
     path('doctor/<int:doctor_id>/feedback/', GetDoctorFeedbackAPI.as_view(), name='doctor_feedback'),
-
+    path("user_view_book/", UserViewBook.as_view(), name="user_view_book"),
 ]

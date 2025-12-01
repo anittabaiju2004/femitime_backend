@@ -1,3 +1,4 @@
+from urllib import response
 from django.shortcuts import render
 from rest_framework.decorators import api_view
 from django.shortcuts import render
@@ -80,6 +81,13 @@ import google.generativeai as genai
 import os
 from dotenv import load_dotenv
 from django.conf import settings
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+import google.generativeai as genai
+import os
+from dotenv import load_dotenv
+from django.conf import settings
 
 # Load environment variables
 load_dotenv()
@@ -91,62 +99,63 @@ if not api_key:
 # Configure Gemini API
 genai.configure(api_key=settings.GOOGLE_API_KEY)
 
-# Create Gemini model instance
-model = genai.GenerativeModel('gemini-2.5-flash')
+# Create model instance
+gemini_model = genai.GenerativeModel('gemini-2.5-flash')
 
-# ✅ PCOD-related keywords
+
+# PCOD-related keywords (for filtering)
 PCOD_KEYWORDS = [
-    "pcod", "pcos", "ovarian cysts", "hormonal imbalance", "irregular periods",
-    "missed periods", "menstrual irregularities", "infertility", "fertility",
-    "ovulation", "testosterone", "estrogen", "progesterone", "acne", "hair loss",
-    "weight gain", "obesity", "insulin resistance", "sugar levels", "metformin",
-    "diet", "exercise", "stress", "thyroid", "ultrasound", "fertility issues",
-    "menstrual cycle", "periods", "ovaries", "pelvic pain", "cramps", "treatment",
-    "lifestyle", "symptoms", "diagnosis", "medication", "medicine", "remedies",
-    "doctor", "consultation", "counselling", "blood test", "scan", "reproductive health"
+    "pcod", "pcos", "ovarian cyst", "cysts", "hormonal imbalance",
+    "irregular periods", "missed period", "period delay", "fertility",
+    "infertility", "ovulation", "insulin resistance", "testosterone",
+    "estrogen", "weight gain", "acne", "hair loss", "hair growth",
+    "belly fat", "obesity", "thyroid", "metformin", "follicles",
+    "ultrasound", "polycystic", "cycle", "pimples", "skin darkening",
+    "pelvic pain", "pcod symptoms", "pcod treatment", "pcod cure",
+    "exercise", "diet", "nutrition", "healthy food"
 ]
 
 # Greeting keywords
 GREETINGS = ["hi", "hello", "hey", "good morning", "good evening", "good afternoon"]
 
-# ✅ Chatbot API for PCOD conversations
-class ChatbotAPIView(APIView):
+
+class PCODChatbotAPIView(APIView):
     def post(self, request):
         user_message = request.data.get("message", "").lower().strip()
 
         if not user_message:
             return Response({
                 "type": "error",
-                "reply": "Message is empty."
+                "reply": "Message is empty"
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        # Greeting responses
+        # Greeting check
         if any(greet in user_message for greet in GREETINGS):
             return Response({
                 "type": "greeting",
-                "reply": "Hello! 😊 I'm your PCOD health assistant. You can ask me anything about PCOD symptoms, treatment, diet, or lifestyle tips."
+                "reply": "Hello! 😊 I'm PCO-Assist, your PCOD health companion. Ask me anything about PCOD symptoms, diet, treatment, or recovery."
             })
 
-        # Check if message is PCOD-related
+        # Check PCOD relevance
         if not any(keyword in user_message for keyword in PCOD_KEYWORDS):
             return Response({
                 "type": "not_related",
-                "reply": "I can only help with PCOD-related topics such as symptoms, causes, treatments, and lifestyle advice."
+                "reply": "I can only answer questions related to PCOD/PCOS, hormonal imbalance, symptoms, treatment, or lifestyle tips."
             })
 
         try:
-            # Generate PCOD-specific answer
-            response = model.generate_content(
-                f"You are a women's health assistant focused on PCOD. "
-                f"Provide accurate, friendly, and supportive answers about PCOD — including symptoms, treatment, fertility, "
-                f"diet, and emotional health. Avoid unrelated topics. User asked: {user_message}"
+            # Focus Gemini on PCOD-only conversation
+            response = gemini_model.generate_content(
+                f"You are a women's health assistant specialized in PCOD/PCOS. "
+                f"Give medical-safe, supportive, simple replies. "
+                f"Do NOT answer outside PCOD. User asked: {user_message}"
             )
-
             return Response({
                 "type": "pcod_info",
                 "reply": response.text
             })
-
+        
+            
         except Exception as e:
             return Response({
                 "type": "error",
@@ -160,16 +169,14 @@ class ChatbotAPIView(APIView):
 
 
 
-
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework import status
 
-from .models import Register, PredictionResult
+from .models import Register, TblPredictionResult
 from .serializers import PredictionSerializer
 from .ml_assets.ml_utils import *
-
 
 class PCODPredictionAPI(APIView):
     parser_classes = (MultiPartParser, FormParser)
@@ -179,35 +186,61 @@ class PCODPredictionAPI(APIView):
             user_id = request.data.get("user_id")
             user = Register.objects.get(id=user_id)
 
-            # User lifestyle inputs
+            # User inputs
+            age = float(request.data.get("age"))
+            weight = float(request.data.get("weight"))
+            height = float(request.data.get("height"))
+            bmi = float(request.data.get("bmi"))
+            fast_food = request.data.get("fast_food")
+            blood_group = request.data.get("blood_group")
+            pulse = float(request.data.get("pulse"))
+            cycle = request.data.get("cycle")
+            hair = request.data.get("hair")
+            acne = request.data.get("acne")
+            mood = request.data.get("mood")
+            skin = request.data.get("skin")
+
             user_input = {
-                "Age": float(request.data.get("age")),
-                "Weight": float(request.data.get("weight")),
-                "Height": float(request.data.get("height")),
-                "BMI": float(request.data.get("bmi")),
-                "Fast_Food_Consumption": float(request.data.get("fast_food")),
-                "Blood_Group": encode_blood_group(request.data.get("blood_group")),
-                "Pulse_Rate": float(request.data.get("pulse")),
-                "Cycle_Regularity": float(request.data.get("cycle")),
-                "Hair_Growth": float(request.data.get("hair")),
-                "Acne": float(request.data.get("acne")),
-                "Mood_Swings": float(request.data.get("mood")),
-                "Skin_Darkening": float(request.data.get("skin"))
+                "Age": age,
+                "Weight": weight,
+                "Height": height,
+                "BMI": bmi,
+                "Fast_Food_Consumption": float(fast_food),
+                "Blood_Group": encode_blood_group(blood_group),
+                "Pulse_Rate": pulse,
+                "Cycle_Regularity": float(cycle),
+                "Hair_Growth": float(hair),
+                "Acne": float(acne),
+                "Mood_Swings": float(mood),
+                "Skin_Darkening": float(skin)
             }
 
-            # Save PDF file temporarily
+            # Save PDF
             pdf_file = request.FILES["pdf"]
-            saved_obj = PredictionResult.objects.create(
+
+            # Save initial record WITH USER INPUTS
+            saved_obj = TblPredictionResult.objects.create(
                 user=user,
+                age=age,
+                weight=weight,
+                height=height,
+                bmi=bmi,
+                fast_food_consumption=fast_food,
+                blood_group=blood_group,
+                pulse_rate=pulse,
+                cycle_regularity=cycle,
+                hair_growth=hair,
+                acne=acne,
+                mood_swings=mood,
+                skin_darkening=skin,
                 pdf_file=pdf_file
             )
 
+            # Extract PDF values
             pdf_path = saved_obj.pdf_file.path
-
-            # Extract medical values
             pdf_values = extract_medical_values(pdf_path)
 
-            # Prepare the combined dataset
+            # Prepare dataframe
             df = prepare_final_df(user_input, pdf_values)
 
             # Predict
@@ -217,20 +250,41 @@ class PCODPredictionAPI(APIView):
             mapping = {0: "Likely", 1: "Unlikely", 2: "Highly Risk"}
             result_label = mapping[int(pred[0])]
 
-            # Save result in DB
+            # Save prediction result
             saved_obj.result = result_label
             saved_obj.extracted_data = pdf_values
             saved_obj.save()
 
             return Response({
+                "status": "success",
+                "user_id": user.id,
                 "user": user.name,
                 "result": result_label,
-                "values": pdf_values
+                "values": pdf_values,
+                "age": age,
+                "weight": weight,
+                "height": height,
+                "bmi": bmi,
+                "fast_food_consumption": fast_food,
+                "blood_group": blood_group,
+                "pulse_rate": pulse,
+                "cycle_regularity": cycle,
+                "hair_growth": hair,
+                "acne": acne,
+                "mood_swings": mood,
+                "skin_darkening": skin,
             })
 
         except Exception as e:
             return Response({"error": str(e)}, status=400)
 
+from adminapp.models import Book
+from femitimeapp.serializers import BookSerializer
+class UserViewBook(APIView):
+    def get(self, request, *args, **kwargs):
+        books = Book.objects.all()
+        serializer = BookSerializer(books, many=True)
+        return Response(serializer.data)
 
 
 
@@ -464,3 +518,14 @@ class GetDoctorFeedbackAPI(APIView):
 
         except Exception as e:
             return Response({"error": str(e)}, status=400)
+
+
+
+
+from rest_framework import viewsets
+from .models import CycleInput
+from .serializers import CycleInputSerializer
+
+class CycleInputViewSet(viewsets.ModelViewSet):
+    queryset = CycleInput.objects.all()
+    serializer_class = CycleInputSerializer
