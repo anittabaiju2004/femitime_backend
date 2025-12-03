@@ -8,11 +8,11 @@ from drf_yasg import openapi
 from .import views
 # import your viewsets
 from femitimeapp.views import *
-# from femitimeapp.views import get_cycle_inputs_by_user
+
 # router setup
 router = routers.DefaultRouter()
 router.register(r'register', RegisterViewSet, basename='register')
-router.register(r'doctor_register', HospitalDoctorRegisterViewSet,basename='doctor_register')
+router.register(r'hospital_doctors', HospitalDoctorRegisterViewSet,basename='doctor_register')
 router.register(r'hospital_doctor_timeslots', HospitalDoctorTimeSlotGroupViewSet, basename='hospital_doctor_timeslot')
 router.register(r'cycle-inputs', CycleInputViewSet, basename='cycle-input')
 hospital_doctor_profile_update = HospitalDoctorProfileViewSet.as_view({
@@ -55,4 +55,9 @@ urlpatterns = [
     path('hospital/doctor/<int:doctor_id>/feedback/', views.view_hospital_doctor_feedback, name='view_hospital_doctor_feedback'),
     path('doctor/<int:doctor_id>/feedback/', GetDoctorFeedbackAPI.as_view(), name='doctor_feedback'),
     path("user_view_book/", UserViewBook.as_view(), name="user_view_book"),
+    path('hospital/doctor/book-slot/', views.book_hospital_doctor_slot, name='book_hospital_doctor_slot'),
+    path('user/<int:user_id>/hospital/bookings/', views.user_view_booking_hospital.as_view(), name='user_view_hospital_bookings'),
+    path('hospital/doctor/<int:doctor_id>/bookings/', views.doctor_view_booking_hospital.as_view(), name='doctor_view_booking_hospital'),
+    path('cycle-inputs/<int:user_id>/', GetCycleInputsByUser.as_view(), name='user_cycle_inputs'),
+
 ]

@@ -13,10 +13,10 @@ model = pickle.load(open(os.path.join(ML_PATH, "best_model.pkl"), "rb"))
 scaler = pickle.load(open(os.path.join(ML_PATH, "scaler.pkl"), "rb"))
 label_encoder = pickle.load(open(os.path.join(ML_PATH, "label_encoder.pkl"), "rb"))
 
-# --------------------------
-# BLOOD GROUP ENCODING
-# --------------------------
-def encode_blood_group(bg):
+# -----------------------------
+# Blood Group Encoder
+# -----------------------------
+def encode_blood_group(bg: str):
     mapping = {
         "A+": 0, "A-": 1,
         "B+": 2, "B-": 3,
@@ -25,12 +25,45 @@ def encode_blood_group(bg):
     }
     return mapping.get(bg.upper().strip(), 0)
 
-# --------------------------
-# PDF Extractor
-# --------------------------
+
+# -----------------------------
+# Maps strings → 0–3 values
+# -----------------------------
+def map_fast_food(value: str):
+    mapping = {
+        "never": 0,
+        "rarely": 1,
+        "often": 2,
+        "daily": 3
+    }
+    return mapping.get(value.lower().strip(), 0)
+
+
+def map_cycle(value: str):
+    mapping = {
+        "regular": 0,
+        "irregular": 1
+    }
+    return mapping.get(value.lower().strip(), 0)
+
+
+def map_severity(value: str):
+    mapping = {
+        "none": 0,
+        "mild": 1,
+        "moderate": 2,
+        "severe": 3
+    }
+    return mapping.get(value.lower().strip(), 0)
+
+
+# -----------------------------
+# Extract medical test values from PDF
+# -----------------------------
 def extract_medical_values(pdf_path):
     doc = fitz.open(pdf_path)
     text = ""
+
     for page in doc:
         text += page.get_text()
 
@@ -54,24 +87,25 @@ def extract_medical_values(pdf_path):
 
 
 # -----------------------------
-# Build final dataframe
+# Convert everything into ML-ready row
 # -----------------------------
 def prepare_final_df(user_input, pdf_values):
     cols = [
-        "Age", "Weight", "Height", "BMI", "Fast_Food_Consumption",
-        "Blood_Group", "Pulse_Rate", "Cycle_Regularity", "Hair_Growth",
-        "Acne", "Mood_Swings", "Skin_Darkening",
+        "Age", "Weight", "Height", "BMI",
+        "Fast_Food_Consumption", "Blood_Group", "Pulse_Rate",
+        "Cycle_Regularity", "Hair_Growth", "Acne",
+        "Mood_Swings", "Skin_Darkening",
         "TSH", "VitaminD", "Glucose", "LH", "FSH",
         "Prolactin", "Testosterone", "Hemoglobin"
     ]
 
-    final = {}
+    result = {}
     for col in cols:
         if col in user_input:
-            final[col] = user_input[col]
+            result[col] = user_input[col]
         elif col in pdf_values:
-            final[col] = pdf_values[col]
+            result[col] = pdf_values[col]
         else:
-            final[col] = 0  
+            result[col] = 0
 
-    return pd.DataFrame([final])
+    return pd.DataFrame([result])
