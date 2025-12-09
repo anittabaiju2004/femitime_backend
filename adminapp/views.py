@@ -158,6 +158,7 @@ def admin_view_hospital_bookings(request):
     hospital_bookings = (
         HospitalBooking.objects
         .select_related('user', 'doctor')
+        
         .order_by('-date', '-id')
     )
 
