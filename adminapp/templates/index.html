@@ -13,13 +13,13 @@
   <style>
     body {
       font-family: 'Poppins', sans-serif;
-      background: #f4f6f9;
+      background:#ffffff;;
       overflow-x: hidden;
     }
 
     /* Top Horizontal Navbar */
     .navbar-custom {
-      background: #ffffff;
+      background:#f48ca0;;
       padding: 12px 25px;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
       position: sticky;
@@ -30,22 +30,22 @@
     .navbar-brand {
       font-size: 22px;
       font-weight: 700;
-      color: #6a8efc !important;
+      color: #ffffff !important;
     }
 
     .navbar-nav .nav-link {
-      color: #444 !important;
+      color: #ffffff !important;
       font-weight: 500;
       margin-right: 18px;
       transition: 0.3s;
     }
 
     .navbar-nav .nav-link:hover {
-      color: #6a8efc !important;
+      color: #ffffff !important;
     }
 
     .logout-btn {
-      background: #6a8efc;
+      background: #f48ca0;;
       color: #fff;
       border: none;
       padding: 8px 16px;
@@ -55,7 +55,7 @@
     }
 
     .logout-btn:hover {
-      background: #5b79df;
+      background: #f48ca0;;
     }
 
     /* Main Content */
@@ -90,7 +90,7 @@
     }
 
     .card-box h3 {
-      color: #6a8efc;
+      color: #f48ca0;
       font-size: 22px;
       margin-bottom: 10px;
     }
@@ -106,7 +106,7 @@
 
   <!-- Horizontal Navbar -->
   <nav class="navbar navbar-expand-lg navbar-custom">
-    <a class="navbar-brand" href="{% url 'index' %}">PCOD Admin</a>
+    <a class="navbar-brand" href="{% url 'index' %}"> Admin</a>
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
       <span class="navbar-toggler-icon"></span>
@@ -154,12 +154,14 @@
       </ul>
     </div>
   </nav>
-
+  <br>
+  <br>
   {% block content %}
+  
   <!-- Main Dashboard Content -->
   <div class="content-area">
 
-    <h2 class="dashboard-title">Welcome to the PCOD Admin Dashboard</h2>
+    <h2 class="dashboard-title">Welcome to the Femitime Admin Dashboard</h2>
     <p class="sub-text">
       Monitor doctors, manage users, review bookings and maintain system health efficiently.
     </p>

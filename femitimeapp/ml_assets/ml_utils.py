@@ -1,22 +1,20 @@
 import os
 import pickle
 import re
-import fitz     # PyMuPDF
+import fitz
 import pandas as pd
 from django.conf import settings
 
-# Full path to ml_assets
 ML_PATH = os.path.join(settings.BASE_DIR, "femitimeapp", "ml_assets")
 
-# Load model assets
 model = pickle.load(open(os.path.join(ML_PATH, "best_model.pkl"), "rb"))
 scaler = pickle.load(open(os.path.join(ML_PATH, "scaler.pkl"), "rb"))
 label_encoder = pickle.load(open(os.path.join(ML_PATH, "label_encoder.pkl"), "rb"))
 
-# -----------------------------
-# Blood Group Encoder
-# -----------------------------
-def encode_blood_group(bg: str):
+# -------------------------------------------------------
+# BLOOD GROUP MAPPING
+# -------------------------------------------------------
+def encode_blood_group(bg):
     mapping = {
         "A+": 0, "A-": 1,
         "B+": 2, "B-": 3,
@@ -25,45 +23,40 @@ def encode_blood_group(bg: str):
     }
     return mapping.get(bg.upper().strip(), 0)
 
-
-# -----------------------------
-# Maps strings → 0–3 values
-# -----------------------------
-def map_fast_food(value: str):
+# -------------------------------------------------------
+# STRING → NUMERIC MAPPINGS
+# -------------------------------------------------------
+def map_fast_food(val):
     mapping = {
-        "never": 0,
-        "rarely": 1,
-        "often": 2,
-        "daily": 3
+        "Never": 0,
+        "Rarely": 1,
+        "Often": 2,
+        "Daily": 3,
     }
-    return mapping.get(value.lower().strip(), 0)
+    return mapping.get(val, 0)
 
-
-def map_cycle(value: str):
+def map_cycle(val):
     mapping = {
-        "regular": 0,
-        "irregular": 1
+        "Regular": 0,
+        "Irregular": 1,
     }
-    return mapping.get(value.lower().strip(), 0)
+    return mapping.get(val, 0)
 
-
-def map_severity(value: str):
+def map_severity(val):
     mapping = {
-        "none": 0,
-        "mild": 1,
-        "moderate": 2,
-        "severe": 3
+        "None": 0,
+        "Mild": 1,
+        "Moderate": 2,
+        "Severe": 3,
     }
-    return mapping.get(value.lower().strip(), 0)
+    return mapping.get(val, 0)
 
-
-# -----------------------------
-# Extract medical test values from PDF
-# -----------------------------
+# -------------------------------------------------------
+# PDF Extractor
+# -------------------------------------------------------
 def extract_medical_values(pdf_path):
     doc = fitz.open(pdf_path)
     text = ""
-
     for page in doc:
         text += page.get_text()
 
@@ -86,26 +79,27 @@ def extract_medical_values(pdf_path):
     return fields
 
 
-# -----------------------------
-# Convert everything into ML-ready row
-# -----------------------------
+# -------------------------------------------------------
+# Build Final DF for Prediction
+# -------------------------------------------------------
 def prepare_final_df(user_input, pdf_values):
     cols = [
         "Age", "Weight", "Height", "BMI",
-        "Fast_Food_Consumption", "Blood_Group", "Pulse_Rate",
-        "Cycle_Regularity", "Hair_Growth", "Acne",
-        "Mood_Swings", "Skin_Darkening",
+        "Fast_Food_Consumption", "Blood_Group",
+        "Pulse_Rate", "Cycle_Regularity",
+        "Hair_Growth", "Acne", "Mood_Swings", "Skin_Darkening",
         "TSH", "VitaminD", "Glucose", "LH", "FSH",
         "Prolactin", "Testosterone", "Hemoglobin"
     ]
 
-    result = {}
+    final = {}
+
     for col in cols:
         if col in user_input:
-            result[col] = user_input[col]
+            final[col] = user_input[col]
         elif col in pdf_values:
-            result[col] = pdf_values[col]
+            final[col] = pdf_values[col]
         else:
-            result[col] = 0
+            final[col] = 0
 
-    return pd.DataFrame([result])
+    return pd.DataFrame([final])

@@ -4,13 +4,13 @@ from .models import *
 from rest_framework import serializers
 from .models import Register
 
-class RegisterSerializer(serializers.ModelSerializer):
-    latitude = serializers.FloatField(required=False, allow_null=True)
-    longitude = serializers.FloatField(required=False, allow_null=True)
+# class RegisterSerializer(serializers.ModelSerializer):
+#     latitude = serializers.FloatField(required=False, allow_null=True)
+#     longitude = serializers.FloatField(required=False, allow_null=True)
 
-    class Meta:
-        model = Register
-        fields = '__all__'
+#     class Meta:
+#         model = Register
+#         fields = '__all__'
 
 
     
@@ -29,6 +29,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = Register
         fields = '__all__'
+        
 from rest_framework import serializers
 
 class LoginSerializer(serializers.Serializer):

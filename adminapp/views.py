@@ -151,10 +151,16 @@ def delete_book(request, pk):
 from django.shortcuts import render
 from femitimeapp.models import  HospitalBooking
 
-def view_all_bookings(request):
-    hospital_bookings = HospitalBooking.objects.select_related('doctor', 'user').order_by('-date')
+from django.shortcuts import render
+from femitimeapp.models import HospitalBooking
 
-    context = {
-        'hospital_bookings': hospital_bookings,
-    }
-    return render(request, 'view_all_bookings.html', context)
+def admin_view_hospital_bookings(request):
+    hospital_bookings = (
+        HospitalBooking.objects
+        .select_related('user', 'doctor')
+        .order_by('-date', '-id')
+    )
+
+    return render(request, 'view_all_bookings.html', {
+        'hospital_bookings': hospital_bookings
+    })

@@ -182,17 +182,136 @@ from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework import status
 
-from .models import Register, TblPredictionResult
-from .ml_assets.ml_utils import (
-    encode_blood_group,
-    map_cycle,
-    map_fast_food,
-    map_severity,
-    prepare_final_df,
-    extract_medical_values,
-    scaler,
-    model
-)
+# from .models import Register, TblPredictionResult
+# from .ml_assets.ml_utils import (
+#     encode_blood_group,
+#     map_cycle,
+#     map_fast_food,
+#     map_severity,
+#     prepare_final_df,
+#     extract_medical_values,
+#     scaler,
+#     model
+# )
+
+
+# class PCODPredictionAPI(APIView):
+#     parser_classes = (MultiPartParser, FormParser)
+
+#     def post(self, request):
+#         try:
+#             # -------------------------
+#             # Validate User
+#             # -------------------------
+#             user_id = request.data.get("user_id")
+#             user = Register.objects.get(id=user_id)
+
+#             # -------------------------
+#             # User Inputs (Strings)
+#             # -------------------------
+#             age = float(request.data.get("age"))
+#             weight = float(request.data.get("weight"))
+#             height = float(request.data.get("height"))
+#             bmi = float(request.data.get("bmi"))
+
+#             fast_food = request.data.get("fast_food")            # Never
+#             blood_group = request.data.get("blood_group")        # O+
+#             pulse = float(request.data.get("pulse"))             # 78
+#             cycle = request.data.get("cycle")                    # Regular
+#             mood = request.data.get("mood_swings")
+#             skin = request.data.get("skin_darkening")
+#             hair = request.data.get("hair")
+#             acne = request.data.get("acne")
+#                     # Mild
+
+#             # -------------------------
+#             # Convert Strings → ML Values
+#             # -------------------------
+#             user_input = {
+#                 "Age": age,
+#                 "Weight": weight,
+#                 "Height": height,
+#                 "BMI": bmi,
+#                 "Fast_Food_Consumption": map_fast_food(fast_food),
+#                 "Blood_Group": encode_blood_group(blood_group),
+#                 "Pulse_Rate": pulse,
+#                 "Cycle_Regularity": map_cycle(cycle),
+#                 "Hair_Growth": map_severity(hair),
+#                 "Acne": map_severity(acne),
+#                 "Mood_Swings": map_severity(mood),
+#                 "Skin_Darkening": map_severity(skin)
+#             }
+
+#             # -------------------------
+#             # Save PDF + User Inputs
+#             # -------------------------
+#             pdf_file = request.FILES["pdf"]
+
+#             saved_obj = TblPredictionResult.objects.create(
+#                 user=user,
+#                 age=age,
+#                 weight=weight,
+#                 height=height,
+#                 bmi=bmi,
+#                 fast_food_consumption=fast_food,
+#                 blood_group=blood_group,
+#                 pulse_rate=pulse,
+#                 cycle_regularity=cycle,
+#                 hair_growth=hair,
+#                 acne=acne,
+#                 mood_swings=mood,
+#                 skin_darkening=skin,
+#                 pdf_file=pdf_file
+#             )
+
+#             # -------------------------
+#             # Extract PDF Medical Values
+#             # -------------------------
+#             pdf_values = extract_medical_values(saved_obj.pdf_file.path)
+
+#             # -------------------------
+#             # Prepare ML Input
+#             # -------------------------
+#             df = prepare_final_df(user_input, pdf_values)
+#             df_scaled = scaler.transform(df)
+#             prediction = model.predict(df_scaled)[0]
+
+#             mapping = {0: "Likely", 1: "Unlikely", 2: "Highly Risk"}
+#             result_label = mapping[int(prediction)]
+
+#             # -------------------------
+#             # Save Backend Result
+#             # -------------------------
+#             saved_obj.result = result_label
+#             saved_obj.extracted_data = pdf_values
+#             saved_obj.save()
+
+#             # -------------------------
+#             # API Success Response
+#             # -------------------------
+#             return Response({
+#                 "status": "success",
+#                 "user_id": user.id,
+#                 "user_name": user.name,
+#                 "result": result_label,
+#                 "extracted_pdf_values": pdf_values,
+#                 "prediction_id": saved_obj.id,
+#                 "age": age,
+#                 "weight": weight,
+#                 "height": height,
+#                 "bmi": bmi,
+#                 "fast_food_consumption": fast_food,
+#                 "blood_group": blood_group,
+#                 "pulse_rate": pulse,
+#                 "cycle_regularity": cycle,
+#                 "hair_growth": hair,
+#                 "acne": acne,
+#                 "mood_swings": mood,
+#                 "skin_darkening": skin
+#             })
+
+#         except Exception as e:
+#             return Response({"error": str(e)}, status=400)
 
 
 class PCODPredictionAPI(APIView):
@@ -200,33 +319,25 @@ class PCODPredictionAPI(APIView):
 
     def post(self, request):
         try:
-            # -------------------------
-            # Validate User
-            # -------------------------
             user_id = request.data.get("user_id")
             user = Register.objects.get(id=user_id)
 
-            # -------------------------
-            # User Inputs (Strings)
-            # -------------------------
             age = float(request.data.get("age"))
             weight = float(request.data.get("weight"))
             height = float(request.data.get("height"))
             bmi = float(request.data.get("bmi"))
 
-            fast_food = request.data.get("fast_food")            # Never
-            blood_group = request.data.get("blood_group")        # O+
-            pulse = float(request.data.get("pulse"))             # 78
-            cycle = request.data.get("cycle")                    # Regular
-            mood = request.data.get("mood_swings")
-            skin = request.data.get("skin_darkening")
+            fast_food = request.data.get("fast_food")
+            blood_group = request.data.get("blood_group")
+            pulse = float(request.data.get("pulse"))
+            cycle = request.data.get("cycle")
+
             hair = request.data.get("hair")
             acne = request.data.get("acne")
-                    # Mild
+            mood = request.data.get("mood_swings")
+            skin = request.data.get("skin_darkening")
 
-            # -------------------------
-            # Convert Strings → ML Values
-            # -------------------------
+            # Convert to ML numerical values
             user_input = {
                 "Age": age,
                 "Weight": weight,
@@ -239,14 +350,11 @@ class PCODPredictionAPI(APIView):
                 "Hair_Growth": map_severity(hair),
                 "Acne": map_severity(acne),
                 "Mood_Swings": map_severity(mood),
-                "Skin_Darkening": map_severity(skin)
+                "Skin_Darkening": map_severity(skin),
             }
 
-            # -------------------------
-            # Save PDF + User Inputs
-            # -------------------------
+            # Save PDF
             pdf_file = request.FILES["pdf"]
-
             saved_obj = TblPredictionResult.objects.create(
                 user=user,
                 age=age,
@@ -264,54 +372,46 @@ class PCODPredictionAPI(APIView):
                 pdf_file=pdf_file
             )
 
-            # -------------------------
-            # Extract PDF Medical Values
-            # -------------------------
             pdf_values = extract_medical_values(saved_obj.pdf_file.path)
 
-            # -------------------------
-            # Prepare ML Input
-            # -------------------------
             df = prepare_final_df(user_input, pdf_values)
             df_scaled = scaler.transform(df)
             prediction = model.predict(df_scaled)[0]
 
-            mapping = {0: "Likely", 1: "Unlikely", 2: "Highly Risk"}
+            mapping = {0: "High Risk",1: "Likely",2: "Unlikely"}
+
             result_label = mapping[int(prediction)]
 
-            # -------------------------
-            # Save Backend Result
-            # -------------------------
             saved_obj.result = result_label
             saved_obj.extracted_data = pdf_values
             saved_obj.save()
 
-            # -------------------------
-            # API Success Response
-            # -------------------------
             return Response({
                 "status": "success",
+                "message": "Prediction generated successfully",
+                "prediction_id": saved_obj.id,
+                "result": result_label,
                 "user_id": user.id,
                 "user_name": user.name,
-                "result": result_label,
                 "extracted_pdf_values": pdf_values,
-                "prediction_id": saved_obj.id,
-                "age": age,
-                "weight": weight,
-                "height": height,
-                "bmi": bmi,
-                "fast_food_consumption": fast_food,
-                "blood_group": blood_group,
-                "pulse_rate": pulse,
-                "cycle_regularity": cycle,
-                "hair_growth": hair,
-                "acne": acne,
-                "mood_swings": mood,
-                "skin_darkening": skin
-            })
+                "user_inputs": {
+                    "age": age,
+                    "weight": weight,
+                    "height": height,
+                    "bmi": bmi,
+                    "fast_food_consumption": fast_food,
+                    "blood_group": blood_group,
+                    "pulse_rate": pulse,
+                    "cycle_regularity": cycle,
+                    "hair_growth": hair,
+                    "acne": acne,
+                    "mood_swings": mood,
+                    "skin_darkening": skin,
+                }
+            }, status=status.HTTP_201_CREATED)
 
         except Exception as e:
-            return Response({"error": str(e)}, status=400)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 from adminapp.models import Book
@@ -681,6 +781,26 @@ class GetCycleInputsByUser(APIView):
                 )
 
             serializer = CycleInputSerializer(cycle_inputs, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+class ViewPredictionResultsByUser(APIView):
+    def get(self, request, user_id):
+        try:
+            results = TblPredictionResult.objects.filter(user_id=user_id).order_by('-created_at')
+
+            if not results.exists():
+                return Response(
+                    {"message": "No prediction results found for this user."},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            serializer = PredictionSerializer(results, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         except Exception as e:

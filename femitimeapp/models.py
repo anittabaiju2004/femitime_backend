@@ -79,7 +79,6 @@ class PredictionResult(models.Model):
     extracted_data = models.JSONField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
-
 class TblPredictionResult(models.Model):
     user = models.ForeignKey(Register, on_delete=models.CASCADE)
 
@@ -87,10 +86,12 @@ class TblPredictionResult(models.Model):
     weight = models.FloatField(default=0)
     height = models.FloatField(default=0)
     bmi = models.FloatField(default=0)
+
     fast_food_consumption = models.CharField(max_length=50, default="0")
     blood_group = models.CharField(max_length=10, default="Unknown")
     pulse_rate = models.FloatField(default=0)
     cycle_regularity = models.CharField(max_length=50, default="0")
+
     hair_growth = models.CharField(max_length=50, default="0")
     acne = models.CharField(max_length=50, default="0")
     mood_swings = models.CharField(max_length=50, default="0")
@@ -99,7 +100,11 @@ class TblPredictionResult(models.Model):
     pdf_file = models.FileField(upload_to="medical_reports/")
     result = models.CharField(max_length=50, default="Pending")
     extracted_data = models.JSONField(null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.name} → {self.result}"
 
 
 
